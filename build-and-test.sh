@@ -14,7 +14,6 @@ docker build -t thecodingmachine/php:${PHP_VERSION}-${BRANCH}-slim-${BRANCH_VARI
 docker build -t test/slim_onbuild --build-arg PHP_VERSION="${PHP_VERSION}" --build-arg BRANCH="$BRANCH" --build-arg BRANCH_VARIANT="$BRANCH_VARIANT" tests/slim_onbuild
 # This should run ok (the sudo disable environment variables but call to composer proxy does not trigger PHP ini file regeneration)
 docker run --rm test/slim_onbuild php -m | grep sockets
-docker run --rm test/slim_onbuild php -m | grep xdebug
 docker run --rm test/slim_onbuild php -m | grep pdo_pgsql
 docker run --rm test/slim_onbuild php -m | grep pdo_sqlite
 docker rmi test/slim_onbuild
@@ -133,17 +132,6 @@ docker run --rm -e PHP_EXTENSION_MBSTRING=0 thecodingmachine/php:${PHP_VERSION}-
 [[ "$?" = "1" ]]
 set -e
 
-# Let's check that the "xdebug.remote_host" contains a value different from "no value"
-docker run --rm -e PHP_EXTENSION_XDEBUG=1 thecodingmachine/php:${PHP_VERSION}-${BRANCH}-${BRANCH_VARIANT} php -i | grep xdebug.remote_host| grep -v "no value"
-
-if [[ "${PHP_VERSION}" != "7.4" ]]; then
-  # Tests that blackfire + xdebug will output an error
-  RESULT=`docker run --rm -e PHP_EXTENSION_XDEBUG=1 -e PHP_EXTENSION_BLACKFIRE=1 thecodingmachine/php:${PHP_VERSION}-${BRANCH}-${BRANCH_VARIANT} php -v 2>&1 | grep 'WARNING: Both Blackfire and Xdebug are enabled. This is not recommended as the PHP engine may not behave as expected. You should strongly consider disabling Xdebug or Blackfire.'`
-  [[ "$RESULT" = "WARNING: Both Blackfire and Xdebug are enabled. This is not recommended as the PHP engine may not behave as expected. You should strongly consider disabling Xdebug or Blackfire." ]]
-
-  # Check that blackfire can be enabled
-  docker run --rm -e PHP_EXTENSION_BLACKFIRE=1 thecodingmachine/php:${PHP_VERSION}-${BRANCH}-${BRANCH_VARIANT} php -m | grep blackfire
-fi
 # Let's check that the extensions are enabled when composer is run
 docker build -t test/composer_with_gd --build-arg PHP_VERSION="${PHP_VERSION}" --build-arg BRANCH="$BRANCH" --build-arg BRANCH_VARIANT="$BRANCH_VARIANT" tests/composer
 
