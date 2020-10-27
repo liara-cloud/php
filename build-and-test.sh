@@ -31,14 +31,14 @@ docker run --rm thecodingmachine/php:${PHP_VERSION}-${BRANCH}-slim-${BRANCH_VARI
 
 if [[ $VARIANT == apache* ]]; then
     # Test if environment variables are passed to PHP
-    DOCKER_CID=`docker run --rm -e MYVAR=foo -p "81:80" -d -v $(pwd):/var/www/html thecodingmachine/php:${PHP_VERSION}-${BRANCH}-slim-${BRANCH_VARIANT}`
+    # DOCKER_CID=`docker run --rm -e MYVAR=foo -p "81:80" -d -v $(pwd):/var/www/html thecodingmachine/php:${PHP_VERSION}-${BRANCH}-slim-${BRANCH_VARIANT}`
 
     # Let's wait for Apache to start
-    sleep 5
+    # sleep 5
 
-    RESULT=`curl http://localhost:81/tests/test.php`
-    [[ "$RESULT" = "foo" ]]
-    docker stop $DOCKER_CID
+    # RESULT=`curl http://localhost:81/tests/test.php`
+    # [[ "$RESULT" = "foo" ]]
+    # docker stop $DOCKER_CID
 
 
     # Test Apache document root (relative)
