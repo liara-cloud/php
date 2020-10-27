@@ -48,17 +48,6 @@ RUN apt-get update \
     && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* /usr/share/doc/*
 
 # |--------------------------------------------------------------------------
-# | User
-# |--------------------------------------------------------------------------
-# |
-# | Define a default user with sudo rights.
-# |
-
-RUN useradd -ms /bin/bash docker && adduser docker sudo
-# Users in the sudoers group can sudo as root without password.
-RUN echo '%sudo ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers
-
-# |--------------------------------------------------------------------------
 # | Default php.ini file
 # |--------------------------------------------------------------------------
 # |
@@ -86,7 +75,7 @@ RUN rm /etc/php/${PHP_VERSION}/cli/php.ini
 # | Installs Composer to easily manage your PHP dependencies.
 # |
 
-#ENV COMPOSER_ALLOW_SUPERUSER 1
+ENV COMPOSER_ALLOW_SUPERUSER 1
 
 RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=real_composer &&\
     chmod +x /usr/local/bin/real_composer
@@ -131,19 +120,8 @@ ENV PHP_EXTENSION_CALENDAR=1 \
     PHP_EXTENSION_XSL=1 \
     PHP_EXTENSION_ZIP=1
 
-# |--------------------------------------------------------------------------
-# | prestissimo
-# |--------------------------------------------------------------------------
-# |
-# | Installs Prestissimo to improve Composer download performance.
-# |
-
-USER docker
-RUN composer global require hirak/prestissimo && \
-    composer global require bamarni/symfony-console-autocomplete && \
+RUN composer global require bamarni/symfony-console-autocomplete && \
     rm -rf ~/.composer/cache
-
-USER root
 
 {{if eq $variant "apache" }}
 ENV APACHE_CONFDIR /etc/apache2
@@ -236,14 +214,14 @@ COPY utils/fpm-zz-docker.conf /etc/php/${PHP_VERSION}/fpm/pool.d/zz-docker.conf
 
 
 {{if eq $variant "cli" }}
-RUN mkdir -p /usr/src/app && chown docker:docker /usr/src/app
+RUN mkdir -p /usr/src/app && chown www-data:www-data /usr/src/app
 WORKDIR /usr/src/app
 {{end}}
 {{if eq $variant "fpm" }}
-RUN mkdir -p /var/www/html && chown -R docker: /var/www
+RUN mkdir -p /var/www/html && chown -R www-data: /var/www
 {{end}}
 {{if or (eq $variant "apache") (eq $variant "fpm") }}
-RUN chown docker:docker /var/www/html
+RUN chown www-data:www-data /var/www/html
 WORKDIR /var/www/html
 {{end}}
 
@@ -255,18 +233,6 @@ WORKDIR /var/www/html
 # |
 ENV PATH="$PATH:./vendor/bin:~/.composer/vendor/bin"
 RUN sed -i 's#/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin#/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:./vendor/bin:~/.composer/vendor/bin#g' /etc/sudoers
-
-USER docker
-# |--------------------------------------------------------------------------
-# | SSH client
-# |--------------------------------------------------------------------------
-# |
-# | Let's set-up the SSH client (for connections to private git repositories)
-# | We create an empty known_host file and we launch the ssh-agent
-# |
-
-RUN mkdir ~/.ssh && touch ~/.ssh/known_hosts && chmod 644 ~/.ssh/known_hosts && eval $(ssh-agent -s)
-
 
 # |--------------------------------------------------------------------------
 # | .bashrc updating
@@ -283,8 +249,6 @@ RUN { \
         echo "alias la='ls --color=auto -A'"; \
         echo "alias l='ls --color=auto -CF'"; \
     } >> ~/.bashrc
-
-USER root
 
 # |--------------------------------------------------------------------------
 # | NodeJS
@@ -340,8 +304,8 @@ CMD ["apache2-foreground"]
 # | Important! This should be changed back to www-data in production.
 # |
 
-ENV APACHE_RUN_USER=docker \
-    APACHE_RUN_GROUP=docker
+ENV APACHE_RUN_USER=www-data \
+    APACHE_RUN_GROUP=www-data
 {{end}}
 {{if eq $variant "cli" }}
 CMD ["php", "-v"]
@@ -367,8 +331,6 @@ RUN ln -s /etc/php/${PHP_VERSION}/mods-available/generated_conf.ini /etc/php/${P
     fi
 {{end}}
 
-
-USER docker
 
 COPY utils/install_selected_extensions.php /usr/local/bin/install_selected_extensions.php
 COPY utils/install_selected_extensions.sh /usr/local/bin/install_selected_extensions.sh

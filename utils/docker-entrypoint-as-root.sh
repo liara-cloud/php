@@ -19,6 +19,8 @@ if [[ "$IMAGE_VARIANT" == "fpm" ]]; then
     ln -sf /usr/lib/php/${PHP_VERSION}/php.ini-${TEMPLATE_PHP_INI} /etc/php/${PHP_VERSION}/fpm/php.ini
 fi
 
+DOCKER_USER=root
+
 # Let's find the user to use for commands.
 # If $DOCKER_USER, let's use this. Otherwise, let's find it.
 if [[ "$DOCKER_USER" == "" ]]; then
@@ -118,16 +120,6 @@ unset REMOTE_HOST_FOUND
 
 php /usr/local/bin/generate_conf.php > /etc/php/${PHP_VERSION}/mods-available/generated_conf.ini
 php /usr/local/bin/setup_extensions.php | sudo bash
-
-# output on the logs can be done by writing on the "tini" PID. Useful for CRONTAB
-TINI_PID=`ps -e | grep tini | awk '{print $1;}'`
-php /usr/local/bin/generate_cron.php $TINI_PID > /tmp/generated_crontab
-chmod 0644 /tmp/generated_crontab
-
-# If generated_crontab is not empty, start supercronic
-if [[ -s /tmp/generated_crontab ]]; then
-    supercronic ${SUPERCRONIC_OPTIONS} /tmp/generated_crontab &
-fi
 
 if [[ "$IMAGE_VARIANT" == "apache" ]]; then
     php /usr/local/bin/enable_apache_mods.php | bash

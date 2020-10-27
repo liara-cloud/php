@@ -21,30 +21,9 @@ docker rmi test/slim_onbuild
 
 # Post build unit tests
 if [[ $VARIANT == cli* ]]; then CONTAINER_CWD=/usr/src/app; else CONTAINER_CWD=/var/www/html; fi
-# Default user is 1000
+# Root user is 0
 RESULT=`docker run --rm thecodingmachine/php:${PHP_VERSION}-${BRANCH}-slim-${BRANCH_VARIANT} id -ur`
-[[ "$RESULT" = "1000" ]]
-
-# If mounted, default user has the id of the mount directory
-mkdir user1999 && sudo chown 1999:1999 user1999
-ls -al user1999
-RESULT=`docker run --rm -v $(pwd)/user1999:$CONTAINER_CWD thecodingmachine/php:${PHP_VERSION}-${BRANCH}-slim-${BRANCH_VARIANT} id -ur`
-[[ "$RESULT" = "1999" ]]
-
-# Also, the default user can write on stdout and stderr
-docker run --rm -v $(pwd)/user1999:$CONTAINER_CWD thecodingmachine/php:${PHP_VERSION}-${BRANCH}-slim-${BRANCH_VARIANT} bash -c "echo TEST > /proc/self/fd/2"
-
-sudo rm -rf user1999
-
-# and it also works for users with existing IDs in the container
-sudo mkdir -p user33
-sudo cp tests/apache/composer.json user33/
-sudo chown -R 33:33 user33
-ls -al user33
-RESULT=`docker run --rm -v $(pwd)/user33:$CONTAINER_CWD thecodingmachine/php:${PHP_VERSION}-${BRANCH}-slim-${BRANCH_VARIANT} id -ur`
-[[ "$RESULT" = "33" ]]
-RESULT=`docker run --rm -v $(pwd)/user33:$CONTAINER_CWD thecodingmachine/php:${PHP_VERSION}-${BRANCH}-slim-${BRANCH_VARIANT} composer update -vvv`
-sudo rm -rf user33
+[[ "$RESULT" = "0" ]]
 
 # Let's check that mbstring is enabled by default (they are compiled in PHP)
 docker run --rm thecodingmachine/php:${PHP_VERSION}-${BRANCH}-slim-${BRANCH_VARIANT} php -m | grep mbstring
@@ -161,13 +140,6 @@ RESULT=`docker run --rm -e CRON_SCHEDULE_1="* * * * * * *" -e CRON_COMMAND_1="(>
 RESULT=`docker run --rm -e CRON_SCHEDULE_1="* * * * * * *" -e CRON_COMMAND_1="(>&2 echo "error")" thecodingmachine/php:${PHP_VERSION}-${BRANCH}-${BRANCH_VARIANT} sleep 1 2>&1 | grep -oP 'msg=error' | head -n1`
 [[ "$RESULT" = "msg=error" ]]
 
-# Let's check that the cron with a user different from root is actually run.
-RESULT=`docker run --rm -e CRON_SCHEDULE_1="* * * * * * *" -e CRON_COMMAND_1="whoami" -e CRON_USER_1="docker" thecodingmachine/php:${PHP_VERSION}-${BRANCH}-${BRANCH_VARIANT} sleep 1 2>&1 | grep -oP 'msg=docker' | head -n1`
-[[ "$RESULT" = "msg=docker" ]]
-
-# Let's check that 2 commands split with a ; are run by the same user.
-RESULT=`docker run --rm -e CRON_SCHEDULE_1="* * * * * * *" -e CRON_COMMAND_1="whoami;whoami" -e CRON_USER_1="docker" thecodingmachine/php:${PHP_VERSION}-${BRANCH}-${BRANCH_VARIANT} sleep 1 2>&1 | grep -oP 'msg=docker' | wc -l`
-[[ "$RESULT" -gt "1" ]]
 
 
 # Let's check that mbstring cannot extension cannot be disabled
@@ -197,8 +169,6 @@ docker rmi test/composer_with_gd
 #################################
 # Let's build the "node" images
 #################################
-docker build -t thecodingmachine/php:${PHP_VERSION}-${BRANCH}-${BRANCH_VARIANT}-node8 --build-arg PHP_VERSION=${PHP_VERSION} --build-arg GLOBAL_VERSION=${BRANCH} -f Dockerfile.${VARIANT}.node8 .
-docker build -t thecodingmachine/php:${PHP_VERSION}-${BRANCH}-${BRANCH_VARIANT}-node10 --build-arg PHP_VERSION=${PHP_VERSION} --build-arg GLOBAL_VERSION=${BRANCH} -f Dockerfile.${VARIANT}.node10 .
 docker build -t thecodingmachine/php:${PHP_VERSION}-${BRANCH}-${BRANCH_VARIANT}-node12 --build-arg PHP_VERSION=${PHP_VERSION} --build-arg GLOBAL_VERSION=${BRANCH} -f Dockerfile.${VARIANT}.node12 .
 
 echo "Tests passed with success"

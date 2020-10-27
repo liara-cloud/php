@@ -4,8 +4,6 @@ FROM thecodingmachine/php:${PHP_VERSION}-${GLOBAL_VERSION}-apache
 
 LABEL authors="Julien Neuhart <j.neuhart@thecodingmachine.com>, David Négrier <d.negrier@thecodingmachine.com>"
 
-USER root
-
 RUN apt-get update && \
     apt-get install -y --no-install-recommends gnupg && \
     curl -sL https://deb.nodesource.com/setup_12.x | bash - && \
@@ -16,5 +14,3 @@ RUN apt-get update && \
     apt-get update && \
     apt-get install -y --no-install-recommends yarn && \
     npm install -g npm
-
-USER docker
