@@ -8,5 +8,4 @@ else
   export ABSOLUTE_APACHE_DOCUMENT_ROOT="/var/www/html/$APACHE_DOCUMENT_ROOT"
 fi
 
-/usr/local/bin/apache-expose-envvars.sh;
 exec "$@";
