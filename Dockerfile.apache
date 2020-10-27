@@ -23,7 +23,8 @@ ENV PHP_EXTENSIONS="bcmath bz2 calendar exif \
     gd gettext gmp igbinary imagick intl \
     mongodb msgpack memcached redis pdo_dblib mysqli pdo_mysql pdo_pgsql pgsql pdo_sqlite sqlite3 \
     shmop soap sysvmsg apcu sysvsem sysvshm xsl opcache zip" \
-    APACHE_EXTENSIONS="rewrite alias authz_host deflate dir expires headers mime autoindex negotiation setenvif"
+    APACHE_EXTENSIONS="rewrite alias authz_host deflate dir expires headers mime autoindex negotiation setenvif" \
+    TEMPLATE_PHP_INI=production \
 
 RUN php /usr/local/bin/generate_conf.php > /etc/php/${PHP_VERSION}/mods-available/generated_conf.ini && \
     php /usr/local/bin/setup_extensions.php | bash && \
