@@ -77,38 +77,6 @@ if [[ $VARIANT == fpm* ]]; then
     docker stop $DOCKER_CID
 fi
 
-# Let's check that the configuration is loaded from the correct php.ini (development, production or imported in the image)
-RESULT=`docker run --rm thecodingmachine/php:${PHP_VERSION}-${BRANCH}-slim-${BRANCH_VARIANT} php -i | grep error_reporting`
-[[ "$RESULT" = "error_reporting => 32767 => 32767" ]]
-
-RESULT=`docker run --rm -e TEMPLATE_PHP_INI=production thecodingmachine/php:${PHP_VERSION}-${BRANCH}-slim-${BRANCH_VARIANT} php -i | grep error_reporting`
-[[ "$RESULT" = "error_reporting => 22527 => 22527" ]]
-
-RESULT=`docker run --rm -v $(pwd)/tests/php.ini:/etc/php/${PHP_VERSION}/cli/php.ini thecodingmachine/php:${PHP_VERSION}-${BRANCH}-slim-${BRANCH_VARIANT} php -i | grep error_reporting`
-[[ "$RESULT" = "error_reporting => 24575 => 24575" ]]
-
-RESULT=`docker run --rm -e PHP_INI_ERROR_REPORTING="E_ERROR | E_WARNING" thecodingmachine/php:${PHP_VERSION}-${BRANCH}-slim-${BRANCH_VARIANT} php -i | grep error_reporting`
-[[ "$RESULT" = "error_reporting => 3 => 3" ]]
-
-# Tests that environment variables with an equal sign are correctly handled
-RESULT=`docker run --rm -e PHP_INI_SESSION__SAVE_PATH="tcp://localhost?auth=yourverycomplex\"passwordhere" thecodingmachine/php:${PHP_VERSION}-${BRANCH}-slim-${BRANCH_VARIANT} php -i | grep "session.save_path"`
-[[ "$RESULT" = "session.save_path => tcp://localhost?auth=yourverycomplex\"passwordhere => tcp://localhost?auth=yourverycomplex\"passwordhere" ]]
-
-# Tests that the SMTP parameter is set in uppercase
-RESULT=`docker run --rm -e PHP_INI_SMTP="192.168.0.1" thecodingmachine/php:${PHP_VERSION}-${BRANCH}-slim-${BRANCH_VARIANT} php -i | grep "^SMTP"`
-[[ "$RESULT" = "SMTP => 192.168.0.1 => 192.168.0.1" ]]
-
-# Tests that environment variables are passed to startup scripts when UID is set
-RESULT=`docker run --rm -e FOO="bar" -e STARTUP_COMMAND_1="env" -e UID=0 thecodingmachine/php:${PHP_VERSION}-${BRANCH}-slim-${BRANCH_VARIANT} sleep 1 | grep "FOO"`
-[[ "$RESULT" = "FOO=bar" ]]
-
-# Tests that multi-commands are correctly executed  when UID is set
-RESULT=`docker run --rm -e STARTUP_COMMAND_1="cd / && whoami" -e UID=0 thecodingmachine/php:${PHP_VERSION}-${BRANCH}-slim-${BRANCH_VARIANT} sleep 1`
-[[ "$RESULT" = "root" ]]
-
-# Tests that startup.sh is correctly executed
-docker run --rm -v $PWD/tests/startup.sh:/etc/container/startup.sh thecodingmachine/php:${PHP_VERSION}-${BRANCH}-slim-${BRANCH_VARIANT} php -m | grep "startup.sh executed"
-
 # Tests that disable_functions is commented in php.ini cli
 RESULT=`docker run --rm thecodingmachine/php:${PHP_VERSION}-${BRANCH}-slim-${BRANCH_VARIANT} php -i | grep "disable_functions"`
 [[ "$RESULT" = "disable_functions => no value => no value" ]]
